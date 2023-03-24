@@ -110,13 +110,15 @@ labels = np.array([1, -1, 1])
 data = np.array([[1, -1], [0, 1], [-10, -1]]).transpose()
 labels = np.array([1, -1, 1])
 
+data = np.array([[-1, 1], [1, -1], [1, 1], [2, 2]]).transpose()
+labels = np.array([1, 1, -1, -1])
+
 D = generator(2,50)
 data = np.array(D[0:-1, :])
 labels = np.array(D[-1, :])
 """
-D = generator(2,50)
-data = np.array(D[0:-1, :])
-labels = np.array(D[-1, :])
+data = np.array([[-1, 1], [1, -1], [1, 1], [2, 2]]).transpose()
+labels = np.array([1, 1, -1, -1])
 
 colours = colour(labels)
 

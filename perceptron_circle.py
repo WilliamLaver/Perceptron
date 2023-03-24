@@ -21,8 +21,8 @@ def mkcircle(center, r):
     x = np.array([r * np.cos(th) + h for th in np.linspace(0, 2 * np.pi, 100)])
     y = np.array([r * np.sin(th) + k for th in np.linspace(0, 2 * np.pi, 100)])
 
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
+    #ax.set_xlim(0, 10)
+    #ax.set_ylim(0, 10)
     ax.plot(x, y)
     return True  # np.array(x, y)
 
@@ -52,7 +52,7 @@ def assignlabels(data):
 
         # if data[0][i] >= dx*0.3 and data[1][i] >= dy*0.6:
         # if data[1][i] >= (0.60*data[0][i] + 0.1):
-        if (data[0][i]**2 + data[1][i]**2)**0.5 <= 6:
+        if (data[0][i]**2 + data[1][i]**2)**0.5 <= 7:
             labels[0][i] = 1
         else:
             labels[0][i] = -1
@@ -83,23 +83,37 @@ def generator(dim, n):
 
 
 # Kernel functions
+
+# The null kernel
 def K(th, x):
     return th.T @ x
 
 
-def K1(th, x):
-    return (th.T @ x)**2
+# Gaussian kernel
+def K_g(th, x, gamma):
+    e1 = np.exp(-1 * abs(th[0][0] - th[1][0])**2 / gamma)
+    e2 = np.exp(-1 * abs(x[0] - x[1])**2 / gamma)
+    return e1 * e2
 
 
-def K2(th, x, th0):
+def K2(th, x):
 
     h = np.array(th[0][0])
     k = np.array(th[1][0])
-    th_trn = np.array([[k**2 + h**2 - th0**2], [-2 * h], [-2 * k], [1], [1]])
-    x_trn = np.array([1, x[0], x[1], x[0]**2, x[1]**2])
+    th_tsfm = np.array([[k**2 + h**2], [-2 * h], [-2 * k], [1], [1]])
+    x_tsfm = np.array([1, x[0], x[1], x[0]**2, x[1]**2])
 
-    res = th_trn.T @ x_trn
+    res = th_tsfm.T @ x_tsfm
     return res[0]
+
+def K3(th, x):
+    th1 = th[0][0]
+    th2 = th[1][0]
+    
+    a = np.array([th1**2, th2**2, np.sqrt(2) * th1 * th2])
+    b = np.array([x[0]**2, x[1]**2, np.sqrt(2) * x[0] * x[1]])
+    
+    return a.T @ b
 
 """ DATASETS:
     
@@ -120,32 +134,44 @@ colours = colour(labels)
 # in this case theta is the normal to the circle
 th = np.array([[0], [0]])
 th0 = 0
+gamma = 0.1
+upperlimit = 1000
 
 center = np.array([[0], [0]])
 r = 1
 
-errNum = 0
+# value of each element is number of mistakes made on that datapoint
+mistakes = np.array([0]*len(data[0, :]))
+
 exists_conflict = True
 
 while (exists_conflict):
 
     exists_conflict = False
-    
+
     for i in range(len(data[0, :])):
-        
-        dist = K2(th, data[:, i], th0)
+
+        dist = K3(th, data[:, i]) + th0
+
+#       # update the closest point to our guess hyperplane
+#       if abs(dist) < gamma:
+#            gamma = abs(dist)
 
         if dist * labels[i] <= 0:
             
-            errNum += 1
-            y = mkunitary(labels[i], len(data[:, 0]))
+            mistakes[i] += 1
+            y = mkunitary(labels[i] * mistakes[i], len(data[:, 0]))
             x = data[:, i]
             
             th = np.add(th.T, y @ x).reshape(2, 1)
-            th0 += errNum
+            th0 += labels[i] * mistakes[i]
+        
+        # escape hatch
+        if np.sum(mistakes) > upperlimit:
+            exists_conflict = False
 
 print("th: ", th, "th_0: ", th0)
 mkcircle(th, th0)
-#   mkcircle(np.array([[0], [0]]), 6)
+mkcircle(np.array([[0], [0]]), 7)
 # mkcircle([[-3], [-3]], 5, 0, 10)
 ax.scatter(data[0, :], data[1, :], c=colours)
