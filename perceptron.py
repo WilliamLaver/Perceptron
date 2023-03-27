@@ -1,248 +1,197 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 25 20:30:52 2023
+
+@author: william
+"""
 import numpy as np
 import matplotlib.pyplot as plt
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
 
 
 class Perceptron(object):
 
     def __init__(self):
+        self.purpose = "To correctly classify data!"
+        self.purpose_sub = "To serve my master."
+        self.Fig = plt.figure(figsize=plt.figaspect(1))
+        self.ax = self.Fig.add_subplot(111)
 
-        self.name = "Perceptron Alg"
-        print("Perceptron is running!\n")
+        print("I AM PERCEPTRON.\nREADY TO CLASSIFY DATA!\n")
 
-    def generateData(d, n):
-        pass
+#                           PLOTTING FUNCTIONS
+# ----------------------------------------------------------------------------
 
-    def train(data):
-        pass
+    def plotline(self, th, th0, x_min, x_max):
+        if th[0][0] == 0:
+            line = np.array([list(range(-5, 6, 2)), [th[1][0]] * 6])
+            print(line)
+        elif th[1][0] == 0:
+            line = np.array([[th[0][0]] * 6, list(range(-5, 6, 2))])
+        else:
+            m = - th[0][0] / th[1][0]
+            b = - th0 / th[1][0]
 
-    def evaluate(data, th):
-        pass
-
-
-def y_filt(y):
-    if (0 <= y < 1):
+            line = np.array([[x_min, m * x_min + b], [0, b], [1, b+m],
+                             [x_max, m * x_max + b]]).transpose()
+        self.ax.plot(line[0, :], line[1, :])
         return True
-    else:
-        return False
 
 
-def mkunitary(a, n):
-    unitary = np.array([[0 for i in range(n)] for i in range(n)])
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                unitary[i][j] = a
-
-    return unitary
-
-
-# returns a populated array defining a line
-def mkline(th, th0, x_min, x_max):
-
-    if th[0][0] == 0:
-        line = np.array([list(range(-5, 6, 2)), [th[1][0]] * 6])
-        print(line)
-    elif th[1][0] == 0:
-        line = np.array([[th[0][0]] * 6, list(range(-5, 6, 2))])
-    else:
-        m = - th[0][0] / th[1][0]
-        b = - th0 / th[1][0]
-
-        line = np.array([[x_min, m * x_min + b],
-                         [0, b], [1, b+m], [x_max, m * x_max + b]]).transpose()
-
-    return line
-
-def mklineslope(m, b, x_min, x_max):
-    
-    dx = x_max - x_min
-    
-    line = np.array([[x_min, m * x_min + b], [0, b], [1, b+m],
-                     [x_max, m * x_max + b]]).transpose()
-    
-    return line
-
-
-# returns an array of the signs (polarity) of the distance
-# to the hyperplane theta in each dimension
-def isPositive(x, th):
-
-    # check input data for compatibility
-    if (len(x[0]) != (len(th))):
-        print("input matrices must be of compatible dimensions: (a x n)*(n x b)\n")
-        
-    dist = (th.T@x)/(th.T@th)**0.5
-    return np.sign(dist)
-
-# this function produces n randomly sampled data points and
-# assigns a label to each as an added dimension, can isolate
-# data using D[0:-1, :]
-def generator(d, n):
-    data = np.random.rand(d, n)
-    labels = assignlabels(data)
-    D = np.concatenate((data,labels))
-    return D
-
-
-
-# this function defines a correlation in the dataset
-def assignlabels(data):
-    
-    n = len(data[0])
-    dx = max(data[0,:]) - min(data[0,:])
-    dy = max(data[1,:]) - min(data[1,:])
-    labels = np.array([[0 for i in range(n)]])
-    #print(labels)
-    
-    for i in range(n):
-        
-        #if data[0][i] >= dx*0.3 and data[1][i] >= dy*0.6:
-        if data[1][i] >= (0.90*data[0][i] + 0.1):
-            labels[0][i] = 1
-        else:
-            labels[0][i] = -1
-            
-    return labels
-
-# create an array of colour values to visualize the labels
-def colour(labels):
-    n = len(labels)
-    colours = np.array([0.1 for i in range(n)])
-    for i in range(len(labels)):
-        if labels[i] <= 0:
-            colours[i] = 1.2
-        else:
-            colours[i] = 0.5
-            
-    return colours
-
-def distance(x, th):
-    return (th.T @ x) / (th.T @ th)**0.5
-
-# this function should produce the error E(theta, theta0) for a given 
-# training dataset
-def evaluate(data, labels, th):
-    #pos = np.array([np.sign(x) for x in labels.T*(data.T@th/(th.T@th)**0.5)])
-    score = num_mistakes = 0
-    for x in labels.T*(data.T@th/(th.T@th)**0.5):
-        score += np.sign(x[0])
-    return score
-
-itr_num = 0
-
-
-def perceptron2(x, labels, th = np.array([[0], [0]]),
-               th0 = np.array([[0]]), visible = False):
-
-    # mistakes = np.array([])
-
-    for i in range(len(data[0, :])):
-        adj_dist = labels[i] * np.sign(th.T @ x[:, i] + th0[0])
-        if (adj_dist) <= 0:
-            # mistakes = np.append(mistakes, i)
-            th = np.array(th.T + labels[i] * x[:, i]).T
-            th0 = th0 + labels[i]
-
-            if visible:
-                line = mkline(th, th0, min(x[0, :]), max(x[1, :]))
-                ax.plot(line[0, :], line[1, :])
-            #itr_num += 1
-            th, th0 = perceptron2(x[:, i:], labels[i:], th, th0, visible)
-     
-       
-    print("BEST theta: ", th, "\nBEST th0:", th0, "mistakes: ")         
-    return th, th0
-
-
-# This is a training function for dataset x (d+1, n), extra dimension contains
-# the labels for dataset x (not implemented yet)
-def perceptron(x, labels, th = np.array([[0], [0]]),
-               th0 = np.array([[0]]), visible = False):
-
-    exists_conflict = True
-    mistakes = np.array([])
-
-    while (exists_conflict):
-        exists_conflict = False
-
-        for i in range(len(data[0, :])):
-
-            if (labels[i] * np.sign(th.T @ x[:, i] + th0[0])) <= 0:
-                exists_conflict = True
-                mistakes = np.append(mistakes, i)
-                th = np.array(th.T + mkunitary(labels[i],
-                                               len(x[:, 0])) @ x[:, i]).T
-                th0 = th0 + labels[i]
-                
-                if visible:
-                    line = mkline(th, th0, min(x[0, :]), max(x[1, :]))
-                    ax.plot(line[0,:], line[1,:])
-                    
-                # th, th0 = perceptron(x[:, i:], labels, th, th0)
-
-    print("BEST theta: ", th, "\nBEST th0:", th0, "mistakes: ", len(mistakes))         
-    return th, th0
-
-def train(data, labels):
-    itrs = 10
-    err = 0
-    for i in len(itrs):
-        # generate data
-        # run perceptron on data
-        # evaluate output theta classifier
-        # increment error according to score
-        pass
-
+#                            UTILITY FUNCTIONS:
 # -----------------------------------------------------------------------------
-   
-"""            
-data = np.array([[ 1,  2], [ 1,  3], [ 2,  1], [ 1, -1], [ 2, -1]]).transpose()
-labels = np.array([-1, -1, 1, 1, 1])
 
-data = np.array([[1, -1], [0, 1], [-1.5, -1]]).transpose()
-labels = np.array([1, -1, 1])
+    def identity(self, a, n):
+        identity =  np.array([[0 for i in range(n)] for i in range(n)])
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    identity[i][j] = a
+        return identity
 
-data = np.array([[-3, 2], [-1, 1], [-1, -1], [2, 2],[1, -1]]).transpose()
-labels = np.array([1, -1, -1, -1, -1])
+    # Normalized, signed distance to the hyperplane.
+    def distance(self, th, th0, x):
+        if not th.any():
+            return 0
+        return (th.T @ x + th0) / (th.T @ th)**.5
 
-D = generator(2,50)
-data = D[0:-1, :]
-labels = D[-1, :]
+    # create an array of colour values to visualize the labels
+    def colour(self, labels, palette=1):
+        if palette == 1:
+            c1 = '#1821b5'
+            c2 = '#d05703'
+        else:
+            c1 = '#0db902'
+            c2 = '#990170'
+        n = len(labels[0, :])
+        colours = np.array([c1 for i in range(n)])
+        for i in range(n):
+            if labels[0][i] <= 0:
+                colours[i] = c1
+            else:
+                colours[i] = c2
+        return colours
 
-"""
-data = np.array([[-3, 2], [-1, 1], [-1, -1], [2, 2],[1, -1]]).transpose()
-labels = np.array([1, -1, -1, -1, -1])
+    def data_split(self, data, labels, q=0.8):
+        n = len(data[0, :])
+        brk = int(q * n)
 
-th = np.array([[0], [0]])
-th0 = np.array([[0]])
+        d1 = np.array([[0.for i in range(brk)] for i in range(len(data))])
+        d2 = np.array([[0. for i in range(n - brk)] for i in range(len(data))])
 
-clr_flags = colour(labels)
+        l1 = np.array([[0. for i in range(brk)]])
+        l2 = np.array([[0. for i in range(n - brk)]])
 
-ax.set_ybound(0,1)
-ax.set_xbound(0,1)
+        args1 = np.array([range(brk)])[0]
+        np.random.shuffle(args1.T)
+        args2 = np.array([range(brk, n)])[0]
+        np.random.shuffle(args2.T)
+        print(len(args1), "\n", args1)
+        print(len(args2), "\n", args2)
+        for i in range(n):
+            print(brk, ", ", i)
+            if i < brk:
+                d1[:, i] = data[:, args1[i]]
+                l1[0][i] = labels[0][args1[i]]
+            else:
+                d2[:, i - brk] = data[:, args2[i - brk]]
+                l2[:, i - brk] = labels[0][args2[i - brk]]
+            print(d1)
+        return d1, l1, d2, l2
+#                           DATA GENERATION
+# -----------------------------------------------------------------------------
 
-ax.scatter(data[0,:], data[1,:], c = clr_flags)
+    def generate_linsep(self, dim, n):
+        data = np.random.rand(dim, n)
+        labels = self.assignlinear(data)
+        D = np.concatenate((data, labels))
+        return data, labels
 
-[ths, th0s] = perceptron2(data, labels, th, th0, False)
-[th, th0] = perceptron(data, labels, th, th0, False)
+    # this function defines a linear correlation in the dataset
+    def assignlinear(self, data):
+        n = len(data[0])
+        dx = max(data[0, :]) - min(data[0, :])
+        dy = max(data[1, :]) - min(data[1, :])
+        m = np.random.rand()
+        b = np.random.rand()
+        labels = np.array([[0 for i in range(n)]])
 
-#score = evaluate(data, labels, th)
-#print("Score: ", score)
+        for i in range(n):
+            # if data[0][i] >= dx*0.3 and data[1][i] >= dy*0.6:
+            # if (data[0][i]**2 + data[1][i]**2)**0.5 <= 7:
+            if data[1][i] >= (m * data[0][i] + b):
+                labels[0][i] = 1
+            else:
+                labels[0][i] = -1
 
-line = mkline(th, th0, min(data[0, :]), max(data[1, :]))
-line_s = mkline(ths, th0s, min(data[0, :]), max(data[1, :]))
-ax.plot(line[0,:], line[1,:], c = 'b')
-ax.plot(line_s[0,:], line_s[1,:], c = 'b')
+        return labels
 
-#line2 = mkline(3/4, 2/4, 0, 2, 100)
-#ax.plot(line2[0,:], line2[1,:], c = 'b')
-
-#line = mkline(2, -3, 0, 3, 50)
-#ax.plot(line[0,:], line[1,:], c = "b")
-
+#                           CLASSIFICATION
+#-----------------------------------------------------------------------------
 
 
+    def train(self, data, labels):
+        """
+        data = np.array([[200, 800, 200, 800],
+                         [0.2,  0.2,  0.8,  0.8],
+                         [1, 1, 1, 1]])
+        data = np.array([[2, 8, 2, 8],
+                         [0.002,  0.002,  0.008,  0.008],
+                         [1, 1, 1, 1]])
+        labels = np.array([[-1, -1, 1, 1]])
 
+        #th = np.array([[0], [1], [-0.5]])
+        th = np.array([[0], [0], [0]])
+        th = np.array([[0], [1], [-0.0005]])
+        th = np.array([[-2.00000e+00], [2.00006e+03], [-4.05000e-02]])
+        """
+        gamma = None
+        ceiling = 100000
+        errors = 0
+        th = np.array([[0], [0]])
+        th0 = 0
+
+        exists_conflict = True
+
+        while (exists_conflict):
+            exists_conflict = False
+
+            for i in range(len(data[0, :])):
+                dist = self.distance(th, th0, data[:, i])
+                if gamma is None or dist < gamma:
+                    gamma = labels[0][i] * dist
+                if dist * labels[0][i] <= 0:
+                    exists_conflict = True
+                    errors += 1
+                    th = np.add(th.T, labels[0][i] * data[:, i]).T
+                    th0 = th0 + labels[0][i]
+            if errors > ceiling:
+                exists_conflict = False
+
+        print("n_errs: ", errors, "gamma: ", gamma, "\ntheta: ",
+              th, "\ntheta_0: ", th0)
+
+        return th, th0
+
+    def classify(self, data, th, th0):
+        n = len(data[0, :])
+        labels = np.array([[0 for i in range(n)]])
+        for i in range(n):
+            labels[0][i] = np.sign(self.distance(th, th0, data[:, i]))
+
+        return labels
+
+#                               EXECUTABLE
+# ----------------------------------------------------------------------------
+
+
+percy = Perceptron()
+data, labels = percy.generate_linsep(2, 50)
+d_train, l_train, d_test, l_test = percy.data_split(data, labels, q=0.8)
+colours1 = percy.colour(l_train, palette=1)
+colours2 = percy.colour(l_test, 2)
+percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1)
+percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2)
+th, th0 = percy.train(d_train, l_train)
+percy.plotline(th, th0, 0, 1)
+percy.Fig
