@@ -41,8 +41,12 @@ class Perceptron(object):
 #                            UTILITY FUNCTIONS:
 # -----------------------------------------------------------------------------
 
+    # returns column vector of zeroes, length k, xth row value is 1
+    def one_hot(self, x, k):
+        return np.array([[0] if (x - 1) != i else [1] for i in range(k)])
+
     def identity(self, a, n):
-        identity =  np.array([[0 for i in range(n)] for i in range(n)])
+        identity = np.array([[0 for i in range(n)] for i in range(n)])
         for i in range(n):
             for j in range(n):
                 if i == j:
@@ -131,20 +135,6 @@ class Perceptron(object):
 
 
     def train(self, data, labels):
-        """
-        data = np.array([[200, 800, 200, 800],
-                         [0.2,  0.2,  0.8,  0.8],
-                         [1, 1, 1, 1]])
-        data = np.array([[2, 8, 2, 8],
-                         [0.002,  0.002,  0.008,  0.008],
-                         [1, 1, 1, 1]])
-        labels = np.array([[-1, -1, 1, 1]])
-
-        #th = np.array([[0], [1], [-0.5]])
-        th = np.array([[0], [0], [0]])
-        th = np.array([[0], [1], [-0.0005]])
-        th = np.array([[-2.00000e+00], [2.00006e+03], [-4.05000e-02]])
-        """
         gamma = None
         ceiling = 100000
         errors = 0
