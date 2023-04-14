@@ -6,6 +6,7 @@ Created on Sat Mar 25 20:30:52 2023
 @author: william
 """
 import numpy as np
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 
@@ -14,8 +15,9 @@ class Perceptron(object):
     def __init__(self):
         self.purpose = "To correctly classify data!"
         self.purpose_sub = "To serve my master."
-        self.Fig = plt.figure(figsize=plt.figaspect(1))
-        self.ax = self.Fig.add_subplot(111)
+        self.fig = plt.figure(figsize=plt.figaspect(1))
+        self.ax = self.fig.add_subplot(111)
+        
 
         print("I AM PERCEPTRON.\nREADY TO CLASSIFY DATA!\n")
 
@@ -76,6 +78,7 @@ class Perceptron(object):
                 colours[i] = c2
         return colours
 
+    # Splits the data at the specified breakpoint and shuffles the entries
     def data_split(self, data, labels, q=0.8):
         n = len(data[0, :])
         brk = int(q * n)
@@ -90,18 +93,32 @@ class Perceptron(object):
         np.random.shuffle(args1.T)
         args2 = np.array([range(brk, n)])[0]
         np.random.shuffle(args2.T)
-        print(len(args1), "\n", args1)
-        print(len(args2), "\n", args2)
+
         for i in range(n):
-            print(brk, ", ", i)
+
             if i < brk:
                 d1[:, i] = data[:, args1[i]]
                 l1[0][i] = labels[0][args1[i]]
             else:
                 d2[:, i - brk] = data[:, args2[i - brk]]
                 l2[:, i - brk] = labels[0][args2[i - brk]]
-            print(d1)
+
         return d1, l1, d2, l2
+
+    def plotConfig(self):
+        train_patch1 = mpatches.Circle((0, 0), 1, facecolor='#1821b5',
+                                      label='Train (-)')
+        train_patch2 = mpatches.Circle((0, 0), 1, facecolor='#d05703',
+                                       label='Train (+)')
+        test_patch1 = mpatches.Circle((0, 0), 1, facecolor='#0db902',
+                                      label='Test (-)')
+        test_patch2 = mpatches.Circle((0, 0), 1, facecolor='#990170',
+                                      label='Test (+)')
+        percy.fig.legend(handles=[train_patch2, train_patch1],
+                        bbox_to_anchor=(1.25, .7), loc='outside upper right')
+        percy.fig.legend(handles=[test_patch2, test_patch1],
+                        bbox_to_anchor=(1.25, .5), loc='outside upper right')
+
 #                           DATA GENERATION
 # -----------------------------------------------------------------------------
 
@@ -128,11 +145,43 @@ class Perceptron(object):
             else:
                 labels[0][i] = -1
 
+        print("Data split by line m = ", m, ", b = ", b)
         return labels
 
-#                           CLASSIFICATION
-#-----------------------------------------------------------------------------
+    """
+                                EXISTING DATASETS
+    data = np.array([[2, 3, 9, 12],
+                  [5, 1, 6, 5]])
+    labels = np.array([[1, -1, 1, -1]])
 
+    data = np.array([[2, 3, 9, 12],
+                  [5, 2, 6, 5]])
+    labels = np.array([[1, -1, 1, -1]])
+
+    data = np.array([[1, 1, 2, 2],
+                     [1, 2, 1, 2]])
+    labels = np.array([[-1, 1, 1, -1]])
+
+    data = np.array([[-3, 2], [-1, 1], [-1, -1], [2, 2],[1, -1]]).transpose()
+    labels = np.array([[1, -1, -1, -1, -1]])
+
+    data = np.array([[1,  2], [1,  3], [2,  1], [1, -1], [2, -1]]).transpose()
+    labels = np.array([[-1, -1, 1, 1, 1]])
+
+    data = np.array([[1, -1], [0, 1], [-1.5, -1]]).transpose()
+    labels = np.array([1, -1, 1])
+
+    data = np.array([[1, -1], [0, 1], [-10, -1]]).transpose()
+    labels = np.array([1, -1, 1])
+
+    data = np.array([[-1, 1], [1, -1], [1, 1], [2, 2]]).transpose()
+    labels = np.array([1, 1, -1, -1])
+    """
+
+#                           CLASSIFICATION
+# -----------------------------------------------------------------------------
+    def averaged_perceptron(self):
+        pass
 
     def train(self, data, labels):
         gamma = None
@@ -157,6 +206,7 @@ class Perceptron(object):
                     th0 = th0 + labels[0][i]
             if errors > ceiling:
                 exists_conflict = False
+                print("Ceiling hit => No solution found")
 
         print("n_errs: ", errors, "gamma: ", gamma, "\ntheta: ",
               th, "\ntheta_0: ", th0)
@@ -171,6 +221,41 @@ class Perceptron(object):
 
         return labels
 
+    # Returns the percent accuracy of the separator on the dataset.
+    # Potential to return all distance calculations in an array
+    def evaluate_classifier(self, th, th0, data, labels):
+        dist = self.distance(th, th0, data[:, 0])[0][0]
+        dists = np.array([[dist], [np.sign(dist) * labels[0][0]]])
+        for i in range(1, len(data[0])):
+            dist = self.distance(th, th0, data[:, i])[0][0]
+            arr = np.array([[dist], [np.sign(dist) * labels[0][i]]])
+            dists = np.concatenate((dists, arr), axis=1)
+
+        score = np.sum(dists, axis=1)[1]
+        return score / len(data[0, :])
+    
+    def eval_algorithm(self, T):
+        score = 0
+        for i in range(T):
+            data, labels = percy.generate_linsep(2, 50)
+            d_train, l_train, d_test, l_test = percy.data_split(data, labels, q=0.8)
+            colours1 = percy.colour(l_train, palette=1)
+            colours2 = percy.colour(l_test, 2)
+    
+            sc1 = percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1, label="train")
+            sc2 = percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2, label="test")
+            percy.plotConfig()
+    
+            th, th0 = percy.train(d_train, l_train)
+            score += percy.evaluate_classifier(th, th0, d_test, l_test)
+        return score / T
+
+class LRGD(Perceptron):
+    def __init__(self):
+        self.purpose = "Extract an optimized separator function from input data"
+        self.sub_purpose = "Use linear regression to achieve gradient descent"
+        
+
 #                               EXECUTABLE
 # ----------------------------------------------------------------------------
 
@@ -180,8 +265,13 @@ data, labels = percy.generate_linsep(2, 50)
 d_train, l_train, d_test, l_test = percy.data_split(data, labels, q=0.8)
 colours1 = percy.colour(l_train, palette=1)
 colours2 = percy.colour(l_test, 2)
-percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1)
-percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2)
+
+sc1 = percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1, label="train")
+sc2 = percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2, label="test")
+percy.plotConfig()
+
 th, th0 = percy.train(d_train, l_train)
-percy.plotline(th, th0, 0, 1)
-percy.Fig
+score = percy.evaluate_classifier(th, th0, d_test, l_test)
+print("Evaluation: ", score)
+percy.plotline(th, th0, min(data[0]), max(data[0]))
+percy.fig
