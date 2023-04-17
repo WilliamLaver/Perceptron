@@ -145,7 +145,6 @@ class Perceptron(object):
             else:
                 labels[0][i] = -1
 
-        print("Data split by line m = ", m, ", b = ", b)
         return labels
 
     """
@@ -180,16 +179,42 @@ class Perceptron(object):
 
 #                           CLASSIFICATION
 # -----------------------------------------------------------------------------
-    def averaged_perceptron(self):
-        pass
-
-    def train(self, data, labels):
+    def averaged_perceptron(self, data, labels, max_epochs):
         gamma = None
-        ceiling = 100000
         errors = 0
-        th = np.array([[0], [0]])
+        th = np.array([[0] for i in range(len(data[:, 0]))])
         th0 = 0
+        thetas = th
+        offsets = th0
+        count = 0
+        exists_conflict = True
 
+        while (exists_conflict):
+            exists_conflict = False
+
+            for i in range(len(data[0, :])):
+                count += 1
+                dist = self.distance(th, th0, data[:, i])
+                if gamma is None or dist < gamma:
+                    gamma = labels[0][i] * dist
+                if dist * labels[0][i] <= 0:
+                    exists_conflict = True
+                    errors += 1
+                    th = np.add(th.T, labels[0][i] * data[:, i]).T
+                    th0 = th0 + labels[0][i]
+                thetas = np.add(thetas, th)
+                offsets += th0
+            if errors > max_epochs:
+                exists_conflict = False
+                print("Ceiling hit => No solution found")
+
+        return thetas / count, offsets / count, gamma, errors
+
+    def perceptron(self, data, labels, max_epochs):
+        gamma = None
+        errors = 0
+        th = np.array([[0] for i in range(len(data[:, 0]))])
+        th0 = 0
         exists_conflict = True
 
         while (exists_conflict):
@@ -204,13 +229,17 @@ class Perceptron(object):
                     errors += 1
                     th = np.add(th.T, labels[0][i] * data[:, i]).T
                     th0 = th0 + labels[0][i]
-            if errors > ceiling:
+            if errors > max_epochs:
                 exists_conflict = False
                 print("Ceiling hit => No solution found")
 
-        print("n_errs: ", errors, "gamma: ", gamma, "\ntheta: ",
-              th, "\ntheta_0: ", th0)
+        return th, th0, gamma, errors
 
+    def train(self, learning_alg, data, labels, verbose=False):
+        th, th0, gamma, errors = learning_alg(data, labels, 100000)
+        if verbose:
+            print("N_errs: ", errors, "gamma:¸ ", gamma, "\ntheta: ",
+                  th, "\ntheta_0: ", th0)
         return th, th0
 
     def classify(self, data, th, th0):
@@ -234,44 +263,37 @@ class Perceptron(object):
         score = np.sum(dists, axis=1)[1]
         return score / len(data[0, :])
     
-    def eval_algorithm(self, T):
+    def eval_algorithm(self, learning_alg, epochs):
         score = 0
-        for i in range(T):
+        for i in range(epochs):
             data, labels = percy.generate_linsep(2, 50)
-            d_train, l_train, d_test, l_test = percy.data_split(data, labels, q=0.8)
+            d_train, l_train, d_test, l_test = percy.data_split(data,
+                                                                labels, q=0.8)
             colours1 = percy.colour(l_train, palette=1)
             colours2 = percy.colour(l_test, 2)
-    
+
             sc1 = percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1, label="train")
             sc2 = percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2, label="test")
             percy.plotConfig()
-    
-            th, th0 = percy.train(d_train, l_train)
+
+            th, th0 = percy.train(learning_alg, d_train, l_train)
+            percy.plotline(th, th0, min(data[0]), max(data[0]))
             score += percy.evaluate_classifier(th, th0, d_test, l_test)
-        return score / T
+        return score / epochs
+
 
 class LRGD(Perceptron):
     def __init__(self):
         self.purpose = "Extract an optimized separator function from input data"
         self.sub_purpose = "Use linear regression to achieve gradient descent"
-        
+
 
 #                               EXECUTABLE
 # ----------------------------------------------------------------------------
 
-
+epochs = 30
 percy = Perceptron()
-data, labels = percy.generate_linsep(2, 50)
-d_train, l_train, d_test, l_test = percy.data_split(data, labels, q=0.8)
-colours1 = percy.colour(l_train, palette=1)
-colours2 = percy.colour(l_test, 2)
-
-sc1 = percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1, label="train")
-sc2 = percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2, label="test")
-percy.plotConfig()
-
-th, th0 = percy.train(d_train, l_train)
-score = percy.evaluate_classifier(th, th0, d_test, l_test)
-print("Evaluation: ", score)
-percy.plotline(th, th0, min(data[0]), max(data[0]))
-percy.fig
+evaluation = percy.eval_algorithm(percy.perceptron, epochs)
+avg_eval = percy.eval_algorithm(percy.averaged_perceptron, epochs)
+print("Accuracy over ", epochs, " iterations:")
+print("Perceptron = ", evaluation, "\nAveraged Perceptron = ", avg_eval)
