@@ -40,6 +40,21 @@ class Perceptron(object):
         return True
 
 
+    def plotConfig(self):
+        train_patch1 = mpatches.Circle((0, 0), 1, facecolor='#1821b5',
+                                      label='Train (-)')
+        train_patch2 = mpatches.Circle((0, 0), 1, facecolor='#d05703',
+                                       label='Train (+)')
+        test_patch1 = mpatches.Circle((0, 0), 1, facecolor='#0db902',
+                                      label='Test (-)')
+        test_patch2 = mpatches.Circle((0, 0), 1, facecolor='#990170',
+                                      label='Test (+)')
+        percy.fig.legend(handles=[train_patch2, train_patch1],
+                        bbox_to_anchor=(1.25, .7), loc='outside upper right')
+        percy.fig.legend(handles=[test_patch2, test_patch1],
+                        bbox_to_anchor=(1.25, .5), loc='outside upper right')
+
+
 #                            UTILITY FUNCTIONS:
 # -----------------------------------------------------------------------------
 
@@ -78,47 +93,6 @@ class Perceptron(object):
                 colours[i] = c2
         return colours
 
-    # Splits the data at the specified breakpoint and shuffles the entries
-    def data_split(self, data, labels, q=0.8):
-        n = len(data[0, :])
-        brk = int(q * n)
-
-        d1 = np.array([[0.for i in range(brk)] for i in range(len(data))])
-        d2 = np.array([[0. for i in range(n - brk)] for i in range(len(data))])
-
-        l1 = np.array([[0. for i in range(brk)]])
-        l2 = np.array([[0. for i in range(n - brk)]])
-
-        args1 = np.array([range(brk)])[0]
-        np.random.shuffle(args1.T)
-        args2 = np.array([range(brk, n)])[0]
-        np.random.shuffle(args2.T)
-
-        for i in range(n):
-
-            if i < brk:
-                d1[:, i] = data[:, args1[i]]
-                l1[0][i] = labels[0][args1[i]]
-            else:
-                d2[:, i - brk] = data[:, args2[i - brk]]
-                l2[:, i - brk] = labels[0][args2[i - brk]]
-
-        return d1, l1, d2, l2
-
-    def plotConfig(self):
-        train_patch1 = mpatches.Circle((0, 0), 1, facecolor='#1821b5',
-                                      label='Train (-)')
-        train_patch2 = mpatches.Circle((0, 0), 1, facecolor='#d05703',
-                                       label='Train (+)')
-        test_patch1 = mpatches.Circle((0, 0), 1, facecolor='#0db902',
-                                      label='Test (-)')
-        test_patch2 = mpatches.Circle((0, 0), 1, facecolor='#990170',
-                                      label='Test (+)')
-        percy.fig.legend(handles=[train_patch2, train_patch1],
-                        bbox_to_anchor=(1.25, .7), loc='outside upper right')
-        percy.fig.legend(handles=[test_patch2, test_patch1],
-                        bbox_to_anchor=(1.25, .5), loc='outside upper right')
-
 #                           DATA GENERATION
 # -----------------------------------------------------------------------------
 
@@ -147,6 +121,32 @@ class Perceptron(object):
 
         return labels
 
+    # Splits the data at the specified breakpoint and shuffles the entries
+    def data_split(self, data, labels, q=0.8):
+        n = len(data[0, :])
+        brk = int(q * n)
+
+        d1 = np.array([[0.for i in range(brk)] for i in range(len(data))])
+        d2 = np.array([[0. for i in range(n - brk)] for i in range(len(data))])
+
+        l1 = np.array([[0. for i in range(brk)]])
+        l2 = np.array([[0. for i in range(n - brk)]])
+
+        args1 = np.array([range(brk)])[0]
+        np.random.shuffle(args1.T)
+        args2 = np.array([range(brk, n)])[0]
+        np.random.shuffle(args2.T)
+
+        for i in range(n):
+
+            if i < brk:
+                d1[:, i] = data[:, args1[i]]
+                l1[0][i] = labels[0][args1[i]]
+            else:
+                d2[:, i - brk] = data[:, args2[i - brk]]
+                l2[:, i - brk] = labels[0][args2[i - brk]]
+
+        return d1, l1, d2, l2
     """
                                 EXISTING DATASETS
     data = np.array([[2, 3, 9, 12],
@@ -272,8 +272,10 @@ class Perceptron(object):
             colours1 = percy.colour(l_train, palette=1)
             colours2 = percy.colour(l_test, 2)
 
-            sc1 = percy.ax.scatter(d_train[0, :], d_train[1, :], c=colours1, label="train")
-            sc2 = percy.ax.scatter(d_test[0, :], d_test[1, :], c=colours2, label="test")
+            percy.ax.scatter(d_train[0, :], d_train[1, :],
+                             c=colours1, label="train")
+            percy.ax.scatter(d_test[0, :], d_test[1, :],
+                             c=colours2, label="test")
             percy.plotConfig()
 
             th, th0 = percy.train(learning_alg, d_train, l_train)
@@ -284,7 +286,7 @@ class Perceptron(object):
 
 class LRGD(Perceptron):
     def __init__(self):
-        self.purpose = "Extract an optimized separator function from input data"
+        self.purpose = "Extract an optimal separator function from input data"
         self.sub_purpose = "Use linear regression to achieve gradient descent"
 
 
