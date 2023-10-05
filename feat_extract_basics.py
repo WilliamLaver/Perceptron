@@ -11,19 +11,13 @@ import cv2
 import os
 
 
-# requires input of image filepath
-def importImage(fp):
-    # produces 600x600 matrix 3 times, for red, green, blue
-    pic = cv2.imread(fp)
-    return pic
-
 
 # returns array of specified depth and breadth
 def gen2dArray(h, w):
     return np.array([np.random.randint(255, size=w) for i in range(h)])
 
 
-# this returns a 'mirrored' padding for an image file
+# this returns a 'mirrored' padding around an image file
 def genPadding(a):
     new = np.array([np.concatenate(([a[i][0]], a[i], [a[i][-1]]))
                        for i in range(len(a))])
@@ -66,7 +60,8 @@ def makeFilePath(fp, suffix):
 def makeNewDir(fp):
     split = fp.split('/')
     np = ''
-    for i in range(len(split) - 1): np += (split[i] + '/')
+    for i in range(len(split) - 1):
+        np += (split[i] + '/')
     end, ft = split[-1].split('.')
     os.mkdir(np + end + '/')
     return True
@@ -79,18 +74,27 @@ def processImage(picpath, filters):
         for i in range(3):
             padded = genPadding(pic[:, :, i])
             res[:, :, i] = convolution(padded, filters[filt])
-        cv2.imwrite(makeFilePath(picpath, 'filter' + str(filt)), res)
+        newpath = makeFilePath(picpath, 'filter' + str(filt))
+        print(newpath)
+        cv2.imwrite(newpath, res)
+
 
 # ----------------------------- EXECUTABLE --------------------------------
-picpath = '/home/william/Pictures/Kipper.jpg'
+picpath = '/home/william/Pictures/frog.jpg'
 pic = cv2.imread(picpath, 1)
 makeNewDir(picpath)
 
 # FILTERS:
 b = np.array([[1, 0, -1] for i in range(3)])
-c = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]) # sharpen
-d = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]]) # edge detection
-e = np.array([[-2, -1, 0], [-1, 1, 1], [0, 1, 2]]) # emboss
-filters = [b, c, d, e]
+c = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])             # sharpen
+d = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])         # edge detection
+e = np.array([[-2, -1, 0], [-1, 1, 1], [0, 1, 2]])              # emboss
+f = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])              # bottom sobel
+g = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])              # left sobel
+h = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])              # right sobel
+i = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])              # top sobel
+j = np.array([[0.0625, 0.125, 0.0625], [0.125, 0.25, 0.125],
+              [0.0625, 0.125, 0.0625]])                         # blur
+filters = [b, c, d, e, f, g, i, j]
 
-# processImage(picpath, filters)
+processImage(picpath, filters)
