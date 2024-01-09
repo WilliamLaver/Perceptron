@@ -145,10 +145,12 @@ class Perceptron(object):
         return d1, l1, d2, l2
 
 # -------------------------- CLASSIFICATION ---------------------------------
+# This section is for implementing classification algorithms
+# ie: perceptron, averaged perceptron
 
-    def trainSeparator(self, data, labels):
+    def trainSeparator(self, data, labels, T):
         dim = 3
-        cieling = 1000
+        ceiling = 1000
         th = np.array([[0] for i in range(dim)])
         th0 = np.array([[0]])
         exists_conflict = True
@@ -163,16 +165,79 @@ class Perceptron(object):
                     th = np.add(th.T, labels[0][i] * data[:, i]).T
                     th0 = th0 + labels[0][i]
                     exists_conflict = True
-            if errs >= cieling:
-                print("ERROR: Ceiling hit at ", cieling, " mistakes.")
+            if errs >= ceiling:
+                print("WARNING: Ceiling hit at ", ceiling, " mistakes.")
                 exists_conflict = False
 
         return th, th0
+
+    def averaged_perceptron(self, data, labels, T):
+        dim = 3
+        ceiling = 1000
+        th = np.array([[0] for i in range(dim)])
+        th0 = np.array([[0]])
+        th_sum = th
+        th0_sum = th0
+        exists_conflict = True
+        errs = 0
+        gamma = None
+
+        while (exists_conflict):
+            exists_conflict = False
+            for t in range(T):
+                for i in range(len(data[0])):
+                    dist = self.distance(data[:, i], th, th0)
+                    if labels[0][i] * dist <= 0:
+                        exists_conflict = True
+                        errs += 1
+                        if gamma is None or dist < gamma:
+                            gamma = dist
+                        th = np.add(th.T, labels[0][i] * data[:, i]).T
+                        th0 = th0 + labels[0][i]
+                    th_sum = np.add(th_sum, th)
+                    th0_sum = th0_sum + th0
+                if errs >= ceiling:
+                    print("WARNING: Ceiling hit at ", ceiling, " mistakes.")
+                    exists_conflict = False
+
+        return th_sum / (len(data[0]) * T), th0_sum / (len(data[0]) * T)
+
+
+# --------------------------- EVALUATION ---------------------------------
+# The code of this section should evaluate the accuracy of a separator
+# produced by a particular algorithm
+
+    # This function should return a percentage of correctly classified
+    # data points from a given classifier [th, th0]
+
+    def eval_classifier(self, data, labels, th, th0):
+        score = 0
+        for i in range(len(data[0])):
+            if(self.distance(data[:, i], th, th0) * labels[0][i] > 0):
+                score += 1
+        return score / len(data[0])
+
+    # L: learning algorithm, ie: perceptron
+    # G: data generation algorithm, ie: gen_linear_seperable
+    # q : percentage point to split the training data from the test data
+    # it: number of iterations to perform
+    def eval_algorithm(self, L, G, q, it):
+        N = 100
+        score = 0
+        for i in range(it):
+            data, labels = G(3, N)
+            d1, l1, d2, l2 = self.data_split(data, labels, q)
+            th, th0 = L(d1, l1, 100)
+            score += self.eval_classifier(d2, l2, th, th0)
+
+        return score / it
 
 
 # -------------------- EXECUTABLE ---------------------------------------
 percy = Perceptron()
 data, labels = percy.genLinSep(3, 100)
 # data, labels = percy.importImage()
-th, th0 = percy.trainSeparator(data, labels)
+th, th0 = percy.trainSeparator(data, labels, T=100)
 percy.visualize(data, labels, th, th0)
+#print(percy.eval_algorithm(percy.trainSeparator, percy.genLinSep, 0.8, 20))
+print(percy.eval_algorithm(percy.averaged_perceptron, percy.genLinSep, 0.1, 100))
