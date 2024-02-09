@@ -224,7 +224,7 @@ class Classifier(object):
         def eta(t):
             return 2 / (t + 1)**.5
 
-        H = np.array([[0.], [0.], [0.]])
+        H = np.array([[0.] for i in range(self.dim + 1)])
         H_p = H.copy()
         eps = .0000001
         lam = .0001
@@ -252,7 +252,7 @@ class Classifier(object):
         def eta(t):
             return 2 / (1 + t)**.5
         
-        H = np.array([[0.], [0.], [0.]])
+        H = np.array([[0.] for i in range(self.dim + 1)])
         Hp = H.copy()
         lam = 0.001
         t = 0
@@ -324,7 +324,7 @@ class Classifier(object):
         H = classifier(train, 10000, visual)
         self.visualize(test, H)
         score = self.evaluate_accuracy(test, H)
-        print(str(score * 100) + "% accuracy trained on " + str(self.q*100) + " % of the data")
+        print(str(score * 100) + "% accurate, trained on " + str(self.q*100) + " % of the data")
         print("H = " + str(H.T))
         return H
 
